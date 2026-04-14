@@ -95,12 +95,13 @@ app.get('/api/admin/data', async (req, res) => {
 
 // 5. Deployment Logic (Serving the React Frontend)
 // This is where the previous 'PathError' occurred. Updated to modern syntax.
+// 5. Deployment Logic (Serving the React Frontend)
 if (process.env.NODE_ENV === 'production') {
     const buildPath = path.join(__dirname, '../client/build');
     app.use(express.static(buildPath));
 
-    // The ':any*' syntax ensures compatibility with newer Express versions on Render
-    app.get('/:any*', (req, res) => {
+    // Using a Regex Literal instead of a string to avoid PathError
+    app.get(/^(?!\/api).+/, (req, res) => {
         res.sendFile(path.resolve(buildPath, 'index.html'));
     });
 }
