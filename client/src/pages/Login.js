@@ -14,7 +14,7 @@ const Login = () => {
         setLoading(true);
         setError('');
         try {
-            const response = await axios.post('http://localhost:5000/api/login', data);
+            const response = await axios.post('/api/login', data);
             // Store JWT and User info (Experiment 3.1.2)
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data.user));

@@ -24,7 +24,7 @@ const AdminDashboard = () => {
         const fetchData = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get('http://localhost:5000/api/admin/data', {
+                const res = await axios.get('/api/admin/data', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setData(res.data.message);
