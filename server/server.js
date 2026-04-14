@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -10,13 +11,14 @@ app.use(express.json());
 app.use(cors());
 
 // 1. Database Connection
-const MONGO_URI = "mongodb+srv://Aditya:Aadi010.@cluster0.g0l9d0y.mongodb.net/?appName=Cluster0";
-const JWT_SECRET = "Aditya_Super_Secret_123"; // Keep this consistent
+// Using the string you provided. In production, Render will use the MONGO_URI from Environment Variables.
+const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://Aditya:Aadi010.@cluster0.g0l9d0y.mongodb.net/?appName=Cluster0";
+const JWT_SECRET = process.env.JWT_SECRET || "Aditya_Super_Secret_123";
 
 mongoose.connect(MONGO_URI)
     .then(() => {
         console.log("✅ Connected to MongoDB Atlas");
-        seedAdmin(); // Run seeding logic on connection
+        seedAdmin(); // Creates your account automatically
     })
     .catch(err => console.log("❌ DB Connection Error:", err));
 
@@ -28,7 +30,7 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
-// 3. Admin Seeding Logic (Ensures you can always log in)
+// 3. Admin Seeding Logic (Experiment 3.1.3 setup)
 const seedAdmin = async () => {
     try {
         const adminExists = await User.findOne({ username: 'Aditya' });
@@ -39,18 +41,18 @@ const seedAdmin = async () => {
                 password: hashedPassword,
                 role: 'admin'
             });
-            console.log("🚀 Admin 'Aditya' created in Database.");
+            console.log("🚀 Admin 'Aditya' created successfully.");
         } else {
-            console.log("ℹ️ Admin 'Aditya' already exists in Database.");
+            console.log("ℹ️ Admin 'Aditya' is already in the database.");
         }
     } catch (error) {
         console.log("Seeding Error:", error);
     }
 };
 
-// 4. Routes
+// 4. API Routes
 
-// LOGIN ROUTE (Experiment 3.1.1 & 3.1.2)
+// Login Route (Experiment 3.1.1 & 3.1.2)
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -58,9 +60,8 @@ app.post('/api/login', async (req, res) => {
         if (!user) return res.status(401).json({ error: "User not found" });
 
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(401).json({ error: "Wrong credentials" });
+        if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
 
-        // Generate JWT
         const token = jwt.sign(
             { id: user._id, role: user.role },
             JWT_SECRET,
@@ -72,14 +73,14 @@ app.post('/api/login', async (req, res) => {
             user: { username: user.username, role: user.role }
         });
     } catch (err) {
-        res.status(500).json({ error: "Server error" });
+        res.status(500).json({ error: "Server error during login" });
     }
 });
 
-// PROTECTED ADMIN DATA (Experiment 3.1.3)
+// Protected Admin Data (Experiment 3.1.3 RBAC)
 app.get('/api/admin/data', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: "No token provided" });
+    if (!token) return res.status(401).json({ error: "Access Denied: No Token" });
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
@@ -88,18 +89,24 @@ app.get('/api/admin/data', async (req, res) => {
         }
         res.json({ message: "Hello Aditya! You have successfully accessed Admin Data using RBAC." });
     } catch (err) {
-        res.status(401).json({ error: "Invalid token" });
+        res.status(401).json({ error: "Invalid or expired token" });
     }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server active on port ${PORT}`));
-
-// Add this right before app.listen()
-const path = require('path');
+// 5. Deployment Logic (Serving the React Frontend)
+// This is where the previous 'PathError' occurred. Updated to modern syntax.
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/build')));
-  app.get('(.*)', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../client', 'build', 'index.html'));
-  });
+    const buildPath = path.join(__dirname, '../client/build');
+    app.use(express.static(buildPath));
+
+    // The ':any*' syntax ensures compatibility with newer Express versions on Render
+    app.get('/:any*', (req, res) => {
+        res.sendFile(path.resolve(buildPath, 'index.html'));
+    });
 }
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+});
