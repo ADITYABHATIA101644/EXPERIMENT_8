@@ -24,6 +24,10 @@ https://experiment-8-ggkv.onrender.com
 4. Create a `.env` in the server folder with your `MONGO_URI` and `JWT_SECRET`.
 5. Start the project: `npm run start` (from root).
 
+## To Test:
+Username : Aditya
+Password : Aadi010.
+
 ## 👤 Author
 **Aditya Bhatia**
 Chandigarh University**
